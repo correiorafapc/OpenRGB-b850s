@@ -21,11 +21,28 @@ jobs:
             mingw-w64-x86_64-hidapi
             mingw-w64-x86_64-libusb
             mingw-w64-x86_64-mbedtls
-      - name: Build
+      - name: Configure
         run: |
           sed -i "s|^win32:QMAKE_CXXFLAGS += /utf-8|win32-msvc:QMAKE_CXXFLAGS += /utf-8|" OpenRGB.pro
           qmake-qt5 OpenRGB.pro
-          mingw32-make -j$(nproc)
+      - name: Patch Makefile
+        run: |
+          sed -i "s|^CC            = @echo compiling \$< \&\& gcc|CC            = gcc|" Makefile.Release
+          sed -i "s|^CXX           = @echo compiling \$< \&\& g++|CXX           = g++|" Makefile.Release
+          sed -i "s|-DVERSION_STRING=[^ ]*\"[^\"]*\"[^ ]*|-DVERSION_STRING=\\\\\"dev\\\\\"|" Makefile.Release
+          sed -i "s|-DBUILDDATE_STRING=[^ ]*\"[^\"]*\"[^ ]*|-DBUILDDATE_STRING=\\\\\"dev\\\\\"|" Makefile.Release
+          sed -i "s|-DGIT_COMMIT_DATE=[^ ]*\"[^\"]*\"[^\"]*\"[^ ]*|-DGIT_COMMIT_DATE=\\\\\"dev\\\\\"|" Makefile.Release
+          sed -i "s|-DGIT_COMMIT_ID=[^ ]*|-DGIT_COMMIT_ID=\\\\\"dev\\\\\"|" Makefile.Release
+          sed -i "s|-DGIT_BRANCH=[^ ]*|-DGIT_BRANCH=\\\\\"dev\\\\\"|" Makefile.Release
+          sed -i "s|^DEFINES       = |DEFINES       = -D_WIN32_WINNT=0x0A00 |" Makefile.Release
+          sed -i "s|-DHID_HOTPLUG_ENABLED=1|-DHID_HOTPLUG_ENABLED=0|" Makefile.Release
+          sed -i "s|^LIBS        =|LIBS        = -lole32 -loleaut32 -luuid -lwbemuuid -lsetupapi -lcfgmgr32 -lhid -lws2_32 -lwinhttp -ladvapi32 -liphlpapi -lhidapi -lusb-1.0 -lmbedtls -lmbedx509 -lmbedcrypto|" Makefile.Release
+      - name: Shim setenv
+        run: |
+          sed -i "27a #ifdef _WIN32\\nstatic int setenv(const char* n,const char* v,int o){if(!o\&\&getenv(n))return 0;return _putenv_s(n,v);}\\nstatic int unsetenv(const char* n){return _putenv_s(n,\"\");}\\n#endif" dependencies/hueplusplus-1.2.0/src/TimePattern.cpp
+      - name: Build
+        run: |
+          mingw32-make -f Makefile.Release SHELL=/usr/bin/bash -j$(nproc)
       - name: Deploy
         run: |
           mkdir -p dist
