@@ -23,6 +23,9 @@ jobs:
             mingw-w64-x86_64-mbedtls
       - name: Configure
         run: |
+          sed -i "s|super_io/super_io_pawnio.cpp|super_io/super_io.cpp|" OpenRGB.pro
+          sed -i "s|i2c_smbus/Windows/i2c_smbus_pawnio.cpp|i2c_smbus/Windows/i2c_smbus.cpp|" OpenRGB.pro
+          sed -i "/-lPawnIOLib/d" OpenRGB.pro
           sed -i "s|^win32:QMAKE_CXXFLAGS += /utf-8|win32-msvc:QMAKE_CXXFLAGS += /utf-8|" OpenRGB.pro
           qmake-qt5 OpenRGB.pro
       - name: Patch Makefile
@@ -37,8 +40,6 @@ jobs:
           sed -i "s|^DEFINES       = |DEFINES       = -D_WIN32_WINNT=0x0A00 |" Makefile.Release
           sed -i "s|-DHID_HOTPLUG_ENABLED=1|-DHID_HOTPLUG_ENABLED=0|" Makefile.Release
           sed -i "s|^LIBS        =|LIBS        = -lole32 -loleaut32 -luuid -lwbemuuid -lsetupapi -lcfgmgr32 -lhid -lws2_32 -lwinhttp -ladvapi32 -liphlpapi -lhidapi -lusb-1.0 -lmbedtls -lmbedx509 -lmbedcrypto|" Makefile.Release
-          sed -i "s|^OBJECTS       = |OBJECTS       = _intermediate_release/.obj/super_io.o |" Makefile.Release
-          printf "\\n_intermediate_release/.obj/super_io.o: super_io/super_io.cpp\\n\\t\$(CXX) -c \$(CXXFLAGS) \$(INCPATH) -o _intermediate_release/.obj/super_io.o super_io/super_io.cpp\\n" >> Makefile.Release
       - name: Shim setenv
         run: |
           sed -i "27a #ifdef _WIN32\\nstatic int setenv(const char* n,const char* v,int o){if(!o\&\&getenv(n))return 0;return _putenv_s(n,v);}\\nstatic int unsetenv(const char* n){return _putenv_s(n,\"\");}\\n#endif" dependencies/hueplusplus-1.2.0/src/TimePattern.cpp
