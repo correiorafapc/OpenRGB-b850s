@@ -13,6 +13,7 @@ jobs:
           msystem: MINGW64
           update: true
           install: >-
+            git
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-make
             mingw-w64-x86_64-qt5-base
@@ -22,6 +23,7 @@ jobs:
             mingw-w64-x86_64-mbedtls
       - name: Build
         run: |
+          sed -i "s|^win32:QMAKE_CXXFLAGS += /utf-8|win32-msvc:QMAKE_CXXFLAGS += /utf-8|" OpenRGB.pro
           qmake-qt5 OpenRGB.pro
           mingw32-make -j$(nproc)
       - name: Deploy
