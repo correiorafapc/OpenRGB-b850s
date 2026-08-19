@@ -49,7 +49,7 @@ jobs:
           mkdir -p dist
           cp release/OpenRGB.exe dist/ 2>/dev/null || cp OpenRGB.exe dist/
           cd dist
-          windeployqt-qt5 OpenRGB.exe || windeployqt OpenRGB.exe
+          windeployqt-qt5 --no-translations OpenRGB.exe || true
           for d in libhidapi libusb-1.0 libmbedtls libmbedx509 libmbedcrypto libgcc_s_seh-1 libstdc++-6 libwinpthread-1; do cp /mingw64/bin/$d.dll . 2>/dev/null || true; done
       - uses: actions/upload-artifact@v4
         with:
